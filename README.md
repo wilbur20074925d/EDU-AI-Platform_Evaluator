@@ -1,4 +1,4 @@
-# EDU-AI Evaluation Platform — README
+# EDU-AI Evaluation Platform 
 
 Welcome to the **EDU-AI Evaluation Platform**, an interactive Streamlit-based web system designed to operationalize the evaluation framework of the EDU-AI project. This platform enables the analysis of educational AI interventions across multiple data sources, combining quantitative and qualitative indicators into interpretable, research-grade analytics.
 
