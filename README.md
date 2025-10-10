@@ -39,9 +39,7 @@ The platform's modular architecture aligns with experimental and quasi-experimen
 ### 3.1 Learning Gain and Effect Size
 
 Each student-level learning gain is calculated as:
-$$
-\Delta_i = \text{Post}_i - \text{Pre}_i
-$$
+![formula](https://latex.codecogs.com/svg.latex?\Delta_i=\text{Post}_i-\text{Pre}_i)
 
 For between-group comparison, the standardized effect size (Cohen’s \( d \)) is computed as:
 $$
