@@ -6,3 +6,4 @@ scipy
 statsmodels
 textstat
 nltk
+matplotlib
