@@ -39,19 +39,19 @@ The platform's modular architecture aligns with experimental and quasi-experimen
 ### 3.1 Learning Gain and Effect Size
 
 Each student-level learning gain is calculated as:
-\[
+$$
 \Delta_i = \text{Post}_i - \text{Pre}_i
-\]
+$$
 
 For between-group comparison, the standardized effect size (Cohen’s \( d \)) is computed as:
-\[
+$$
 d = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1+n_2-2}}}
-\]
+$$
 
 An adjusted post-test model approximates a three-level mixed model:
-\[
+$$
 Y_{ijk} = \beta_0 + \beta_1 \text{EDUAI}_{jk} + \beta_2 \text{Pre}_{ijk} + u_k + v_{jk} + \varepsilon_{ijk}
-\]
+$$
 
 ---
 
