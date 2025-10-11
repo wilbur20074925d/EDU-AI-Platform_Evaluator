@@ -33,19 +33,99 @@ df = raw.copy()
 # --------------------------------------------------------------------------------------
 # Academic formulas (display)
 # --------------------------------------------------------------------------------------
-st.markdown(r"""
-### Fairness Metrics (Formulas)
-Let \(A\) be the sensitive attribute (group), \( \hat{Y} \) the prediction at a threshold, \(Y\) the ground truth.
 
-- **Selection Rate (SR)**: \(\; SR_g = P(\hat{Y}=1 \mid A=g)\)
-- **Statistical Parity Difference (SPD)**: \(\; SPD = SR_{ref} - SR_{g}\)
-- **Disparate Impact (DI)**: \(\; DI = SR_g / SR_{ref}\)  (80% rule if \(DI \ge 0.8\))
-- **True Positive Rate (TPR / Recall)**: \(\; TPR_g = P(\hat{Y}=1 \mid Y=1, A=g)\)
-- **False Positive Rate (FPR)**: \(\; FPR_g = P(\hat{Y}=1 \mid Y=0, A=g)\)
-- **Equal Opportunity Gap (EOG)**: \(\; |TPR_g - TPR_{ref}|\)
-- **Equalized Odds Gap (EOD)**: \(\; \frac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}\)
-- **Calibration-in-the-large (CIL)**: \(\; \text{mean}(Y) - \text{mean}( \hat{p})\)
-- **Brier Score (per group)**: \(\; \frac{1}{n}\sum ( \hat{p} - Y)^2\)
+st.markdown("### Fairness Metrics (Formulas)")
+
+st.markdown(r"""
+Let $A$ denote the **sensitive attribute** (e.g., gender, race, or age group),  
+$\hat{Y}$ the **predicted outcome** at a decision threshold, and $Y$ the **ground truth label**.  
+Fairness metrics quantify disparities across demographic groups and reveal potential algorithmic bias in predictive systems.
+""")
+
+# --- Selection Rate ---
+st.markdown("**Selection Rate (SR):**")
+st.latex(r"SR_g = P(\hat{Y}=1 \mid A=g)")
+st.markdown("""
+Measures the **proportion of positive outcomes** (e.g., loan approvals) for each group $g$.  
+Differences in SR across groups can indicate systematic preference or disadvantage.  
+A balanced SR across all sensitive groups implies demographic parity at the selection stage.
+""")
+
+# --- Statistical Parity Difference ---
+st.markdown("**Statistical Parity Difference (SPD):**")
+st.latex(r"SPD = SR_{ref} - SR_{g}")
+st.markdown("""
+Captures the **difference in positive outcome rates** between a **reference group** and another group $g$.  
+Values near zero indicate fairness under the statistical parity criterion,  
+whereas larger deviations signal unequal treatment in model outcomes.
+""")
+
+# --- Disparate Impact ---
+st.markdown("**Disparate Impact (DI):**")
+st.latex(r"DI = \dfrac{SR_g}{SR_{ref}}")
+st.markdown("""
+Represents the **ratio of selection rates** between a protected group and the reference group.  
+Under the *“80% rule”* (U.S. EEOC), a model is considered fair if $ DI \ge 0.8 $.  
+This metric is scale-invariant and highlights proportional differences in beneficial predictions.
+""")
+
+# --- True Positive Rate ---
+st.markdown("**True Positive Rate (TPR / Recall):**")
+st.latex(r"TPR_g = P(\hat{Y}=1 \mid Y=1, A=g)")
+st.markdown("""
+Indicates the **sensitivity** of the classifier for group $g$,  
+i.e., the probability of correctly identifying positive instances.  
+Unequal TPRs across groups suggest that the model benefits some groups more than others in correctly recognizing positives.
+""")
+
+# --- False Positive Rate ---
+st.markdown("**False Positive Rate (FPR):**")
+st.latex(r"FPR_g = P(\hat{Y}=1 \mid Y=0, A=g)")
+st.markdown("""
+Measures the **likelihood of incorrect positive predictions** for group $g$.  
+Discrepancies in FPR indicate differential error burdens — for example, one group may experience more unjustified rejections or approvals.
+""")
+
+# --- Equal Opportunity Gap ---
+st.markdown("**Equal Opportunity Gap (EOG):**")
+st.latex(r"EOG = |TPR_g - TPR_{ref}|")
+st.markdown("""
+Quantifies deviations in **true positive rates** between groups.  
+It assesses whether each group has equal access to correct positive outcomes — a central concept in *equal opportunity fairness*.
+""")
+
+# --- Equalized Odds Gap ---
+st.markdown("**Equalized Odds Gap (EOD):**")
+st.latex(r"EOD = \dfrac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}")
+st.markdown("""
+A composite fairness criterion combining disparities in **true positive** and **false positive** rates.  
+Smaller EOD values indicate that both accuracy and error distribution are balanced across groups,  
+achieving *equalized odds* fairness (Hardt et al., 2016).
+""")
+
+# --- Calibration-in-the-Large ---
+st.markdown("**Calibration-in-the-Large (CIL):**")
+st.latex(r"CIL = \text{mean}(Y) - \text{mean}(\hat{p})")
+st.markdown("""
+Evaluates **systematic bias in predicted probabilities**.  
+If $ CIL = 0 $, the model’s average predicted probability equals the observed event rate,  
+implying overall calibration. Deviations reflect under- or over-confidence across predictions.
+""")
+
+# --- Brier Score ---
+st.markdown("**Brier Score (per group):**")
+st.latex(r"\text{Brier} = \dfrac{1}{n}\sum_{i=1}^{n} (\hat{p}_i - Y_i)^2")
+st.markdown("""
+Measures **probabilistic accuracy** of predictions for each group $g$.  
+A lower score denotes better calibration and discrimination.  
+When decomposed by group, it helps identify whether predictive uncertainty differs systematically across subpopulations.
+""")
+
+st.markdown("""
+Together, these metrics enable **multidimensional fairness assessment**,  
+spanning representation (SR, SPD, DI), performance equity (TPR, FPR, EOG, EOD),  
+and probabilistic reliability (CIL, Brier Score).  
+Interpreting them jointly supports transparent and responsible AI evaluation.
 """)
 
 # --------------------------------------------------------------------------------------

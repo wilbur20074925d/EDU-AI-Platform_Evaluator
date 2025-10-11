@@ -105,9 +105,9 @@ with tabs[0]:
     st.subheader("A) Primary Outcome — Learning Gains")
     st.markdown(r"""
 **Definition (per student)**  
-\[
+$$
 \Delta = \text{Post} - \text{Pre}
-\]
+$$
 This is the primary outcome (O1) in the analysis plan. Comparable **Pre/Post** forms are assumed or calibrated for fairness of ∆.  
 """)
     if not has("learning_gains"):
@@ -189,9 +189,9 @@ This is the primary outcome (O1) in the analysis plan. Comparable **Pre/Post** f
         if {"pre","post"}.issubset(lg_adv.columns):
             st.markdown(r"""**2) Bland–Altman Plot (Post vs Pre)**  
         Assesses agreement between Pre and Post:  
-        \[
+        $$
         \text{Mean}=\frac{\text{Pre}+\text{Post}}{2},\quad \Delta=\text{Post}-\text{Pre}
-        \]
+        $$
         """)
             ba = lg_adv.dropna(subset=["pre","post"]).copy()
             if not ba.empty:
@@ -258,9 +258,9 @@ This is the primary outcome (O1) in the analysis plan. Comparable **Pre/Post** f
         # 5) ANCOVA: Post ~ Group + Pre (OLS) ------------------------------------------
         if HAS_SM and {"post","pre"}.issubset(lg_adv.columns):
             st.markdown(r"""**5) ANCOVA (OLS)**  
-        \[
+        $$
         \text{Post} \sim C(\text{group}) + \text{Pre}
-        \]
+        $$
         Adjusts Post for Pre and estimates group contrasts on adjusted outcome.
         """)
             dfm = lg_adv.dropna(subset=["post","pre"]).copy()
@@ -357,10 +357,10 @@ This is the primary outcome (O1) in the analysis plan. Comparable **Pre/Post** f
         # 10) Effect sizes vs reference group (Hedges g) --------------------------------
         if {"group","learning_gain"}.issubset(lg_adv.columns) and lg_adv["group"].nunique() >= 2:
             st.markdown(r"""**10) Effect Sizes vs Reference Group (Hedges' g)**  
-        \[
+        $$
         g = J \cdot \frac{\bar{x}_1 - \bar{x}_0}{s_p},\quad
         J = 1 - \frac{3}{4(n_1+n_0) - 9}
-        \]
+        $$
         """)
             def hedges_g(x, y):
                 x = pd.to_numeric(pd.Series(x), errors="coerce").dropna().values
@@ -401,9 +401,9 @@ with tabs[1]:
     st.markdown(r"""
 **Intraclass Correlation (ICC)** quantifies clustering (e.g., class/site).  
 One-way random effects (proxy)  
-\[
+$$
 ICC(1) = \frac{MS_B - MS_W}{MS_B + (k-1)MS_W}
-\]
+$$
 where \(MS_B\) is between-group mean square, \(MS_W\) is within-group mean square, and \(k\) is average cluster size.  
 """)
     if not has("learning_gains"):
@@ -633,16 +633,16 @@ with tabs[2]:
     st.markdown(r"""
 **Planned model (post-test outcome)**  
 A three-level mixed model (site / class / student) adjusts for **Pre** as covariate:  
-\[
+$$
 Y_{ijk} = \beta_0 + \beta_1 \text{EDUAI}_{jk} + \beta_2 \text{Pre}_{ijk} + u_k + v_{jk} + \varepsilon_{ijk}
-\]
+$$
 We provide a **safe approximation** here:
 - If a binary treatment column (e.g., `treatment` in {0,1}) exists, we run **OLS with cluster-robust SE** (if `statsmodels` is available), adjusting for **Pre**.
 - Else, we show **group contrasts** and **Cohen’s d**.
 Standardized effect (displayed) follows the plan:  
-\[
+$$
 d_{\text{adjusted}} = \frac{\beta_1}{\sqrt{\tau_j^2 + \tau_k^2 + \sigma^2}}\quad\text{(approximated here with pooled SD)}
-\]
+$$
 """)
 
     if not has("learning_gains"):
@@ -1154,9 +1154,9 @@ with tabs[3]:
     st.markdown(r"""
 We control multiplicity using **Benjamini–Hochberg (FDR)** across a small family of tests.  
 **BH rule** finds the largest \(k\) such that  
-\[
+$$
 p_{(k)} \le \frac{k}{m} q
-\]
+$$
 and declares all \(p_{(i)} \le p_{(k)}\) significant. Here we use \(q=0.10\).
     """)
 
@@ -1591,9 +1591,9 @@ with tabs[4]:
     st.markdown(r"""
 **Concept:** Does EDU-AI impact gains **through** process indicators (PEI/RDS)?  
 Within-student (simplified) product-of-coefficients approach:  
-\[
+$$
 \text{Indirect} = a \times b,\;\; a:\; M \sim T,\;\; b:\; \Delta \sim M\;(\text{and }T)
-\]
+$$
 We report OLS coefficients with robust SE if possible. (*MSEM is ideal; this is a pragmatic in-app approximation.*)
 """)
     # We need per-student mediator(s) and outcomes
@@ -2125,9 +2125,9 @@ with tabs[5]:
     st.subheader("F) Dose–Response (Usage Intensity → Outcome)")
     st.markdown(r"""
 We explore a smooth/curved effect of **usage intensity** on **Post** or **Δ**:  
-\[
+$$
 Y = \beta_0 + f(U) + \varepsilon
-\]
+$$
 In-app approximation: quadratic trend \(Y \approx \beta_0 + \beta_1 U + \beta_2 U^2\) with confidence band by bootstrap.  
 """)
     if not (has("learning_gains") and has("telemetry_with_pei")):

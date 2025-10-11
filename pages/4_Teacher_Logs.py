@@ -91,17 +91,75 @@ st.success(f"Filtered rows: {len(df)}")
 # ------------------------------------------------------------------
 # Academic metrics
 # ------------------------------------------------------------------
-st.markdown("""
-### Academic Metrics & Formulas
-- **Task-Switching Rate (TSR)** per day:  
-  \\( \\, \\text{TSR} = \\frac{\\#\\,\\text{activity transitions}}{\\text{total logged hours}} \\,\\)
-- **Interrupt Rate (IR)** per hour:  
-  \\( \\, \\text{IR} = \\frac{\\text{interruptions}}{\\text{total logged hours}} \\,\\)
-- **Shannon Entropy (H)** of activity mix:  
-  \\( \\, H = -\\sum_i p_i \\log p_i \\,\\)  (higher = more diverse orchestration)
-- **Orchestration Load Index (OLI)** (z-scored composite):  
-  \\( \\, \\text{OLI} = z(\\text{Workload}) + z(\\text{Cognitive Load}) + z(\\text{TSR}) + z(\\text{IR}) \\,\\)
-- **EWMA** (λ settable) on Cognitive Load for fatigue trend monitoring.
+
+st.markdown("### Academic Metrics & Formulas")
+
+st.markdown(r"""
+This section formalizes the key **cognitive and behavioral performance metrics** used to quantify 
+task orchestration, workload distribution, and mental fatigue.  
+Let the total logged time be $T$, the number of task transitions be $N_{trans}$, and interruptions be $N_{int}$.  
+Each metric provides insight into distinct dimensions of human–AI interaction and self-regulated learning performance.
+""")
+
+# --- Task Switching Rate (TSR) ---
+st.markdown("**Task-Switching Rate (TSR) — indicator of cognitive fragmentation:**")
+st.latex(r"\text{TSR} = \dfrac{\#\,\text{activity transitions}}{\text{total logged hours}}")
+st.markdown(r"""
+**Interpretation:** TSR quantifies the *frequency of context switches per unit time*.  
+A higher TSR implies greater cognitive fragmentation or multitasking, often associated with increased mental load  
+and reduced sustained attention (Monsell, 2003).  
+Monitoring TSR enables the evaluation of task continuity and attentional control across work sessions.
+""")
+
+# --- Interrupt Rate (IR) ---
+st.markdown("**Interrupt Rate (IR) — frequency of external or self-initiated interruptions:**")
+st.latex(r"\text{IR} = \dfrac{\text{interruptions}}{\text{total logged hours}}")
+st.markdown(r"""
+**Interpretation:** IR measures how frequently a user’s workflow is disrupted within a given time frame.  
+Interruptions may originate from external alerts, peer messages, or internal task switching.  
+A high IR generally correlates with increased cognitive load and lower flow-state engagement (Mark et al., 2008).  
+Balancing IR is critical for optimizing productivity and minimizing task-switching costs.
+""")
+
+# --- Shannon Entropy (H) ---
+st.markdown("**Shannon Entropy (H) — diversity of activity distribution:**")
+st.latex(r"H = -\sum_i p_i \log p_i")
+st.markdown(r"""
+**Interpretation:**$H$ measures the *diversity and unpredictability* of a participant’s activity mix,  
+where $p_i$ denotes the relative proportion of time allocated to activity $i$.  
+Higher entropy signifies a more balanced and heterogeneous engagement pattern,  
+while lower entropy indicates task specialization or potential monotony.  
+Entropy-based indicators are often used in behavioral analytics to characterize adaptive task orchestration.
+""")
+
+# --- Orchestration Load Index (OLI) ---
+st.markdown("**Orchestration Load Index (OLI) — composite index of cognitive intensity:**")
+st.latex(r"\text{OLI} = z(\text{Workload}) + z(\text{Cognitive Load}) + z(\text{TSR}) + z(\text{IR})")
+st.markdown(r"""
+**Interpretation:** OLI integrates multiple *z-scored cognitive indicators* into a single standardized measure.  
+It reflects the overall mental and behavioral load imposed on an individual, combining subjective workload,  
+perceived cognitive strain, task-switching frequency, and interruption density.  
+A higher OLI indicates increased multitasking pressure and cognitive effort across modalities,  
+serving as a unified measure for dynamic workload assessment in human–AI collaboration environments.
+""")
+
+# --- EWMA for Cognitive Fatigue ---
+st.markdown("**Exponentially Weighted Moving Average (EWMA) — fatigue trend estimation:**")
+st.latex(r"\text{EWMA}_t = \lambda \, x_t + (1 - \lambda)\,\text{EWMA}_{t-1}")
+st.markdown(r"""
+**Interpretation:** EWMA applies a smoothing factor $\lambda \in [0,1]$ to track evolving trends  
+in cognitive load or performance indicators.  
+It assigns higher weight to recent observations while preserving historical memory,  
+making it effective for detecting gradual fatigue accumulation or learning adaptation over time.  
+A higher $\lambda$ increases sensitivity to short-term fluctuations, whereas smaller values emphasize long-term stability.
+""")
+
+# --- Summary ---
+st.markdown(r"""
+Together, these metrics enable a **multi-dimensional characterization** of learner or worker behavior,  
+capturing temporal, cognitive, and contextual dimensions of engagement.  
+By analyzing TSR, IR, H, OLI, and EWMA collectively, researchers can evaluate how individuals balance workload,  
+respond to interruptions, and maintain sustained attention under varying cognitive demands.
 """)
 
 # Helper: daily hours fallback (if workload_hours missing, infer by session timing if possible)

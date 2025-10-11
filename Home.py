@@ -109,9 +109,9 @@ st.divider()
 st.subheader("A) Learning Gains")
 st.markdown(r"""
 **Formula (per student):**  
-\[
+$$
 \Delta = \text{Post} - \text{Pre}
-\]
+$$
 **Interpretation:** Positive values indicate improvement from pre to post.
 """)
 if has("learning_gains"):
@@ -147,10 +147,10 @@ else:
 st.subheader("B) Prompt Evolution (PEI) & Reflection Depth (RDS proxy)")
 st.markdown(r"""
 **PEI (Prompt Evolution Index) — conceptual formula:**  
-\[
+$$
 \text{PEI} = 0.3\cdot\text{LexSpec} + 0.35\cdot\min\!\left(\frac{\#\text{strategy verbs}}{6},1\right)
 + 0.35\cdot\min\!\left(\frac{\#\text{constraint cues}}{6},1\right)
-\]
+$$
 
 **RDS proxy (0–4):** counts discourse/justification cues and long-text bonus.  
 """)

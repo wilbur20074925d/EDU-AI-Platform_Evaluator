@@ -26,10 +26,10 @@ df.columns = [c.strip().lower() for c in df.columns]
 st.markdown(r"""
 **Academic formulas**  
 **Prompt Evolution Index (PEI)**  
-\[
+$$
 \text{PEI} = 0.3 \cdot \text{LexSpec} + 0.35 \cdot \min\left(\frac{\#\text{strategy verbs}}{6}, 1\right)
 + 0.35 \cdot \min\left(\frac{\#\text{constraint cues}}{6}, 1\right)
-\]
+$$
 where LexSpec is the ratio of unique alphabetic tokens over total alphabetic tokens.  
 
 **Reflection Depth Score (RDS proxy)** (0–4): counts reasoning cues (because, therefore, hence, justify, so that, however, evidence) and adds +1 if text length > 40 tokens, bucketed into 0–4.

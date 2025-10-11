@@ -49,10 +49,9 @@ if text_col is None:
 st.markdown(r"""
 ### Academic Formula
 **Reflection Depth Score (RDS proxy)** (0–4) measures the presence of reasoning & metacognitive cues:
-\[
+$$
 \text{RDS} = \Big\lfloor \frac{\#\{\text{cues}\}}{2} \Big\rfloor + \mathbb{1}\{\text{tokens} > 40\},
-\;\; \text{capped to } [0,4]
-\]
+$$
 where **cues** ∈ {because, therefore, hence, justify, *so that*, however, evidence}.
 
 We also compute supporting indicators:
