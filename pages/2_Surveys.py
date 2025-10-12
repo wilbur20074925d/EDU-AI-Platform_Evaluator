@@ -192,86 +192,129 @@ else:
     st.info("Reliability skipped: need 'item_code' and 'student_id' columns.")
 
 # ================== NASA-TLX Workload (robust) ==================
+# ================== NASA-TLX Workload (robust) ==================
 st.subheader("C. NASA-TLX Workload (robust)")
 
+import re
+
+# ---- helpers ----
+def to_numeric_response(s, lo=1, hi=7):
+    """Coerce responses to numeric Likert (1–7)."""
+    LIKERT_MAP = {
+        "strongly disagree": 1, "disagree": 2, "somewhat disagree": 3,
+        "neutral": 4, "somewhat agree": 5, "agree": 6, "strongly agree": 7
+    }
+    x = pd.to_numeric(s, errors="coerce")
+    if x.isna().any():
+        x = x.fillna(s.astype(str).str.strip().str.lower().map(LIKERT_MAP))
+    return x.clip(lower=lo, upper=hi)
+
 def infer_subscale_from_item(item: str):
+    """Infer NASA-TLX subscale from item_code or text."""
     s = str(item).lower()
-    if any(k in s for k in ["md","mental"]): return "mental"
-    if any(k in s for k in ["pd","physical"]): return "physical"
-    if any(k in s for k in ["td","temporal","time"]): return "temporal"
-    if any(k in s for k in ["perf","performance","p "]): return "performance"
-    if any(k in s for k in ["effort","e "]): return "effort"
-    if any(k in s for k in ["fr","frus","frustration"]): return "frustration"
+    # Prefer explicit tags or full words; use regex with word boundaries
+    if re.search(r"\b(md|mental)\b", s):      return "mental"
+    if re.search(r"\b(pd|physical)\b", s):    return "physical"
+    if re.search(r"\b(td|temporal|time)\b", s): return "temporal"
+    if re.search(r"\b(perf|performance|p)\b", s): return "performance"
+    if re.search(r"\b(effort|e)\b", s):       return "effort"
+    if re.search(r"\b(fr|frus|frustration)\b", s): return "frustration"
     return None
 
 def nasatlx_score(rows: pd.DataFrame, weights=None):
+    """
+    Compute NASA-TLX overall score from long rows with columns ['subscale','response'].
+    Assumes response is numeric (1–7). Reverses 'performance' (higher worse).
+    If weights dict provided (keys: mental/physical/temporal/performance/effort/frustration),
+    returns weighted average; otherwise unweighted mean.
+    """
     if rows.empty or "subscale" not in rows.columns:
         return np.nan
-    sub_means = rows.groupby("subscale")["response"].mean()
+    sub_means = rows.groupby("subscale", observed=True)["response"].mean()
+
+    # reverse 'performance' to align direction (higher = more workload)
     if "performance" in sub_means.index:
-        sub_means.loc["performance"] = 8 - sub_means.loc["performance"]  # reverse P
+        sub_means.loc["performance"] = 8 - sub_means.loc["performance"]
+
     if weights and sum(weights.values()) > 0:
-        use = {k: weights.get(k, 0) for k in sub_means.index}
+        use = {k: float(weights.get(k, 0)) for k in sub_means.index}
         den = sum(use.values())
-        if den > 0:
-            return float(sum(sub_means[k]*use[k] for k in sub_means.index)/den)
+        return float(sum(sub_means[k] * use[k] for k in sub_means.index) / den) if den > 0 else float(sub_means.mean())
     return float(sub_means.mean())
 
-has_tlx = any(df["instrument"].str.lower() == "nasa_tlx")
+# ---- detect NASA-TLX ----
+has_tlx = (df["instrument"].astype(str).str.strip().str.lower() == "nasa_tlx").any()
 if not has_tlx:
     st.info("No NASA-TLX rows found in 'instrument'.")
 else:
-    tlx = df[df["instrument"].str.lower() == "nasa_tlx"].copy()
-    # get/derive subscales
-    if "subscale" not in tlx.columns:
-        if "item_code" in tlx.columns:
-            tlx["subscale"] = tlx["item_code"].apply(infer_subscale_from_item)
+    tlx = df[df["instrument"].astype(str).str.strip().str.lower() == "nasa_tlx"].copy()
+
+    # ensure numeric response
+    tlx["response"] = to_numeric_response(tlx["response"])
+
+    # ensure subscale (use existing if present; else infer from item_code/text)
+    subscale_col = "subscale" if "subscale" in tlx.columns else None
+    if subscale_col is None or tlx["subscale"].isna().all():
+        base_for_infer = "item_code" if "item_code" in tlx.columns else None
+        if base_for_infer:
+            tlx["subscale"] = tlx[base_for_infer].apply(infer_subscale_from_item)
         else:
             tlx["subscale"] = np.nan
+
     tlx = tlx[tlx["subscale"].notna()].copy()
 
     if tlx.empty:
         st.warning("NASA-TLX present but no subscales identified. "
                    "Add a 'subscale' column or encode item_code as MD/PD/TD/P/E/FR.")
     else:
-        # weights (optional)
+        # --- optional weights UI (AHP-style weighting or zeros = unweighted) ---
         wcols = st.columns(6)
         weights = dict(
-            mental=wcols[0].number_input("Mental", 0, 15, 0, key="tlx_mental"),
-            physical=wcols[1].number_input("Physical", 0, 15, 0, key="tlx_physical"),
-            temporal=wcols[2].number_input("Temporal", 0, 15, 0, key="tlx_temporal"),
-            performance=wcols[3].number_input("Performance", 0, 15, 0, key="tlx_performance"),
-            effort=wcols[4].number_input("Effort", 0, 15, 0, key="tlx_effort"),
-            frustration=wcols[5].number_input("Frustration", 0, 15, 0, key="tlx_frustration"),
+            mental      = wcols[0].number_input("Mental",      0, 15, 0, key="tlx_mental"),
+            physical    = wcols[1].number_input("Physical",    0, 15, 0, key="tlx_physical"),
+            temporal    = wcols[2].number_input("Temporal",    0, 15, 0, key="tlx_temporal"),
+            performance = wcols[3].number_input("Performance", 0, 15, 0, key="tlx_performance"),
+            effort      = wcols[4].number_input("Effort",      0, 15, 0, key="tlx_effort"),
+            frustration = wcols[5].number_input("Frustration", 0, 15, 0, key="tlx_frustration"),
         )
         if sum(weights.values()) == 0:
-            weights = None
+            weights = None  # unweighted
 
-        # compute per-student
+        # --- per-student overall workload scores ---
         wdf = []
-        if "student_id" in tlx.columns:
-            for sid, g in tlx.groupby("student_id"):
+        sid_col = "student_id" if "student_id" in tlx.columns else None
+        if sid_col:
+            for sid, g in tlx.groupby(sid_col, dropna=True):
                 score = nasatlx_score(g[["subscale","response"]], weights=weights)
-                if not np.isnan(score):
-                    wdf.append({"student_id": sid, "nasatlx": score})
+                if np.isfinite(score):
+                    wdf.append({sid_col: sid, "nasatlx": score})
             wdf = pd.DataFrame(wdf)
+        else:
+            wdf = pd.DataFrame(columns=["student_id","nasatlx"])
 
         if not wdf.empty:
             st.dataframe(wdf.head(10), use_container_width=True)
-            st.plotly_chart(
-                px.histogram(wdf, x="nasatlx", nbins=25, title="NASA-TLX Workload Distribution"),
-                use_container_width=True
-            )
-            # radar: mean subscale
-            sub_means = tlx.groupby("subscale")["response"].mean().reindex(
-                ["mental","physical","temporal","performance","effort","frustration"]
-            )
+
+            # histogram of overall TLX scores
+            fig_hist = px.histogram(wdf, x="nasatlx", nbins=25, title="NASA-TLX Workload Distribution")
+            fig_hist.update_layout(template="plotly_white", xaxis_title="Workload (higher=worse)", yaxis_title="Count")
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+            # radar of subscale means (reverse Performance in display too)
+            sub_order = ["mental","physical","temporal","performance","effort","frustration"]
+            sub_means = tlx.groupby("subscale", observed=True)["response"].mean().reindex(sub_order)
+            if "performance" in sub_means.index:
+                sub_means.loc["performance"] = 8 - sub_means.loc["performance"]
             sub_means = sub_means.dropna()
+
             if not sub_means.empty:
                 radar = go.Figure()
                 radar.add_trace(go.Scatterpolar(r=sub_means.values, theta=sub_means.index, fill="toself"))
-                radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[1,7])),
-                                    template="plotly_white", title="NASA-TLX Subscale Means")
+                radar.update_layout(
+                    polar=dict(radialaxis=dict(visible=True, range=[1,7])),
+                    template="plotly_white",
+                    title="NASA-TLX Subscale Means (Performance reversed)"
+                )
                 st.plotly_chart(radar, use_container_width=True)
         else:
             st.info("No per-student NASA-TLX scores computed (check 'student_id' and subscales).")
