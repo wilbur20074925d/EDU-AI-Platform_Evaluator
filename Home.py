@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 st.set_page_config(page_title="EDU-AI Evaluation Platform — Home", layout="wide")
-st.title("EDU-AI Evaluation Platform — Home (Final Output)")
+st.title("EDU-AI Evaluation Platform — Home")
 st.caption("This page summarizes final outputs after you upload on the Upload page and review each module page.")
 
 def has(key: str) -> bool:
