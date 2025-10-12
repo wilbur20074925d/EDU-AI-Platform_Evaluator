@@ -150,8 +150,10 @@ if has_ts and tr:
 df_f = df[mask].copy()
 
 st.success(f"Computed PEI & RDS proxy for N={len(df_f)} rows (after filters).")
-st.dataframe(df_f[["prompt","prompt_evolution_index","rds_proxy","prompt_len","ai_len","latency_ms","_turn_idx"]].head(25),
-             use_container_width=True)
+
+cols = ["prompt","prompt_evolution_index","rds_proxy","prompt_len","ai_len","latency_ms","_turn_idx"]
+cols = [c for c in cols if c in df_f.columns]  # keep only existing ones
+st.dataframe(df_f[cols].head(25))
 
 # -----------------------------------------------------------------------------
 # Advanced visual analytics (Plotly)

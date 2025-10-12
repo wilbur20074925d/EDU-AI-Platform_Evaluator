@@ -1596,6 +1596,15 @@ $$
 $$
 We report OLS coefficients with robust SE if possible. (*MSEM is ideal; this is a pragmatic in-app approximation.*)
 """)
+    # ---- libs for modeling (must exist before any HAS_SM checks) ----
+    try:
+        import statsmodels.api as sm
+        import statsmodels.formula.api as smf
+        HAS_SM = True
+    except Exception:
+        HAS_SM = False
+
+    import numpy as np
     # We need per-student mediator(s) and outcomes
     if not (has("learning_gains") and has("telemetry_with_pei")):
         st.info("Need both learning gains and telemetry (with PEI/RDS).")
@@ -1608,8 +1617,55 @@ We report OLS coefficients with robust SE if possible. (*MSEM is ideal; this is 
         if "student_id" not in lg.columns or "student_id" not in tele.columns:
             st.info("Mediation requires 'student_id' in both tables.")
         else:
-            joined = lg.merge(tele[["student_id","prompt_evolution_index","rds_proxy","group"]].drop_duplicates("student_id"),
-                              on="student_id", how="inner")
+            # ---- Recover/compute missing columns in tele; make join selection safe ----
+            def ensure_col(df, name, value=None):
+                if name not in df.columns:
+                    df[name] = value
+                return df
+
+            # Recover 'group' if missing (rename or merge from assessments if available)
+            if "group" not in tele.columns:
+                if "condition" in tele.columns:
+                    tele = tele.rename(columns={"condition": "group"})
+                elif "arm" in tele.columns:
+                    tele = tele.rename(columns={"arm": "group"})
+                elif "assessments" in st.session_state and \
+                    {"student_id","group"}.issubset(st.session_state["assessments"].columns.str.lower()):
+                    # pull from assessments if provided in session_state
+                    A = st.session_state["assessments"].copy()
+                    A.columns = [c.lower() for c in A.columns]
+                    gmap = A[["student_id","group"]].dropna().drop_duplicates("student_id", keep="last")
+                    tele = tele.merge(gmap, on="student_id", how="left")
+                else:
+                    tele = ensure_col(tele, "group", "Unknown")
+
+            # Compute mediator fallbacks if missing
+            if "prompt_evolution_index" not in tele.columns and "prompt" in tele.columns:
+                STRATEGY = {"plan","debug","optimize","compare","analyze","verify","refactor","test"}
+                CONSTRAINT = {"must","include","exactly","at least","no more than","use","ensure","without","limit","constrain"}
+                def _pei(p):
+                    if not isinstance(p, str): p = ""
+                    toks = [t for t in p.split() if t.isalpha()]
+                    lex = 0.0 if not toks else (0.2 + 0.75*len(set(toks))/max(1,len(toks)))
+                    sv  = sum(1 for w in p.lower().split() if w in STRATEGY)
+                    cd  = sum(p.lower().count(c) for c in CONSTRAINT)
+                    return round(0.3*lex + 0.35*(min(sv,6)/6) + 0.35*(min(cd,6)/6), 3)
+                tele["prompt_evolution_index"] = tele["prompt"].astype(str).apply(_pei)
+
+            if "rds_proxy" not in tele.columns:
+                txt = tele.get("ai_response", "").astype(str) + " " + tele.get("prompt","").astype(str)
+                s = txt.str.lower()
+                cues = ["because","therefore","hence","justify","so that","however","evidence"]
+                cue_counts = sum(s.str.count(rf"\b{c}\b") for c in cues)
+                tokens = s.str.split().str.len()
+                rds = (cue_counts // 2) + (tokens > 40).astype(int)
+                tele["rds_proxy"] = rds.clip(lower=0, upper=4)
+
+            # Select only columns that actually exist to avoid KeyError
+            want = ["student_id","prompt_evolution_index","rds_proxy","group"]
+            have = [c for c in want if c in tele.columns]
+            tele_sel = tele[have].drop_duplicates("student_id")
+            joined = lg.merge(tele_sel, on="student_id", how="inner")
             st.write("Joined view (head):")
             st.dataframe(joined.head(20), use_container_width=True)
 
@@ -1885,18 +1941,46 @@ We report OLS coefficients with robust SE if possible. (*MSEM is ideal; this is 
             else:
                 st.caption("Group column or treatment not available — skipping moderated mediation.")
 
+            # ---- E.7) Quantile Slices — Δ across Mediator Quintiles (patched for Interval -> str) ----
             st.markdown("#### E.7) Quantile Slices — Δ across Mediator Quintiles")
+
             if med in joined.columns and "learning_gain" in joined.columns:
                 qdf = joined.dropna(subset=[med, "learning_gain"]).copy()
                 if not qdf.empty:
+                    # Create quintile bins
                     qdf["_Q"] = pd.qcut(qdf[med], q=5, duplicates="drop")
-                    summ = qdf.groupby("_Q")["learning_gain"].agg(["mean","std","count"]).reset_index()
-                    fig_q = px.bar(summ, x="_Q", y="mean", error_y="std",
-                                title=f"Learning Gain by Quintiles of {med}")
+
+                    # Group summary
+                    summ = qdf.groupby("_Q", observed=True)["learning_gain"].agg(["mean", "std", "count"]).reset_index()
+
+                    # OPTION A: Use human-readable string labels for x-axis
+                    def _iv_to_str(iv):
+                        try:
+                            return f"[{iv.left:.3g}, {iv.right:.3g})"
+                        except Exception:
+                            return str(iv)
+
+                    summ["_Q_label"] = summ["_Q"].astype(str)  # or: summ["_Q"].map(_iv_to_str)
+
+                    # Plot with string x-axis (no Interval objects)
+                    fig_q = px.bar(
+                        summ, x="_Q_label", y="mean", error_y="std",
+                        title=f"Learning Gain by Quintiles of {med}"
+                    )
                     fig_q.update_layout(template="plotly_white", xaxis_title=f"{med} quintile", yaxis_title="Mean Δ")
                     st.plotly_chart(fig_q, use_container_width=True)
-                    st.dataframe(summ, use_container_width=True)
 
+                    # (Optional) Show the table with both interval and label
+                    st.dataframe(summ[["_Q_label", "mean", "std", "count"]], use_container_width=True)
+
+                    # OPTION B (numeric x-axis): use bin midpoints instead of labels
+                    # summ["_Q_mid"] = summ["_Q"].apply(lambda iv: 0.5*(iv.left + iv.right))
+                    # fig_q = px.line(summ, x="_Q_mid", y="mean", markers=True,
+                    #                 title=f"Learning Gain by Quintiles of {med} (bin midpoints)")
+                    # fig_q.update_layout(template="plotly_white", xaxis_title=f"{med} (quintile midpoints)", yaxis_title="Mean Δ")
+                    # st.plotly_chart(fig_q, use_container_width=True)
+
+            
             st.markdown("#### E.8) Partial Residual Plot (Δ ~ mediator | pre)")
             if HAS_SM and "pre" in joined.columns and med in joined.columns and "learning_gain" in joined.columns:
                 dfm = joined.dropna(subset=["learning_gain", med, "pre"]).copy()
@@ -2487,11 +2571,11 @@ with tabs[6]:
     st.subheader("G) Fairness Summary — Accuracy / Parity Gaps")
     st.markdown(r"""
 **Key metrics**  
-- Selection Rate \(SR_g = P(\hat{Y}=1 \mid A=g)\)  
-- Statistical Parity Difference \(SPD = SR_{ref} - SR_g\)  
-- Disparate Impact \(DI = SR_g / SR_{ref}\)  
-- Equal Opportunity Gap \(EOG = |TPR_g - TPR_{ref}|\)  
-- Equalized Odds Gap \(EOD = \frac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}\)  
+- Selection Rate $SR_g = P(\hat{Y}=1 \mid A=g)$  
+- Statistical Parity Difference $SPD = SR_{ref} - SR_g$  
+- Disparate Impact $DI = SR_g / SR_{ref}$  
+- Equal Opportunity Gap $EOG = |TPR_g - TPR_{ref}|$  
+- Equalized Odds Gap $EOD = \frac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}$  
 Reference group is chosen as the **largest-N** group for stability.
 """)
     if not has("fairness_df"):

@@ -31,6 +31,80 @@ if source_opt.startswith("reflections_df") and "reflections_df" in st.session_st
     fallback_col = "ai_response" if "ai_response" in map(str.lower, df.columns) else None
     source_label = "reflection_text"
 else:
+    
+
+
+    def _compute_pei(prompt: str) -> float:
+        STRATEGY = {"plan","debug","optimize","compare","analyze","verify","refactor","test"}
+        CONSTRAINT = {"must","include","exactly","at least","no more than","use","ensure","without","limit","constrain"}
+        if not isinstance(prompt, str): prompt = ""
+        toks = [t for t in prompt.split() if t.isalpha()]
+        lex = 0.0 if not toks else (0.2 + 0.75*len(set(toks))/len(toks))
+        sv = sum(1 for w in prompt.lower().split() if w in STRATEGY)
+        cd = sum(prompt.lower().count(c) for c in CONSTRAINT)
+        return round(0.3*lex + 0.35*(min(sv,6)/6) + 0.35*(min(cd,6)/6), 3)
+
+    def _rds_proxy(text: str) -> int:
+        if not isinstance(text, str): text = ""
+        s = text.lower()
+        cues = ["because","therefore","hence","justify","so that","however","evidence"]
+        cue_hits = sum(len(re.findall(rf"\b{re.escape(c)}\b", s)) for c in cues)
+        tokens = len(s.split())
+        score = (cue_hits // 2) + (1 if tokens > 40 else 0)
+        return int(max(0, min(4, score)))
+
+    def _lc(df):
+        df.columns = [str(c).strip().lower() for c in df.columns]; return df
+
+    tele = st.session_state.get("telemetry_with_pei")
+
+    # Try to build it from other known sources if missing
+    if tele is None:
+        # Prefer a raw telemetry table if present
+        raw_key = "telemetry" if "telemetry" in st.session_state else ("tele_df" if "tele_df" in st.session_state else None)
+        if raw_key:
+            tele = st.session_state[raw_key].copy()
+            tele = _lc(tele)
+
+            # ensure student_id exists
+            for alt in ["student_id","user_id","sid","stu_id","id"]:
+                if alt in tele.columns:
+                    if alt != "student_id":
+                        tele = tele.rename(columns={alt: "student_id"})
+                    break
+            if "student_id" in tele.columns:
+                tele["student_id"] = tele["student_id"].astype(str).str.strip()
+
+            # ensure prompt exists
+            if "prompt" not in tele.columns:
+                for alt in ["user_prompt","query","message","input_text"]:
+                    if alt in tele.columns:
+                        tele = tele.rename(columns={alt: "prompt"}); break
+            if "prompt" not in tele.columns:
+                tele["prompt"] = ""
+
+            # compute mediators if missing
+            if "prompt_evolution_index" not in tele.columns:
+                tele["prompt_evolution_index"] = tele["prompt"].astype(str).apply(_compute_pei)
+
+            if "rds_proxy" not in tele.columns:
+                txt = tele.get("ai_response", "").astype(str) + " " + tele["prompt"].astype(str)
+                tele["rds_proxy"] = txt.apply(_rds_proxy)
+
+            st.session_state["telemetry_with_pei"] = tele
+
+        else:
+            # Last-resort: ask user to upload and stop cleanly
+            st.info("Upload telemetry CSV (must include at least student_id/user_id and preferably prompt/ai_response).")
+            up = st.file_uploader("Upload telemetry.csv", type=["csv"])
+            if up is not None:
+                tele = pd.read_csv(up)
+                tele = _lc(tele)
+                st.session_state["telemetry_with_pei"] = tele
+            else:
+                st.stop()
+
+    # From here on, use df as before
     df = st.session_state["telemetry_with_pei"].copy()
     text_col_guess = "ai_response"
     fallback_col = None

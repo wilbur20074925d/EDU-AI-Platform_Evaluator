@@ -211,11 +211,11 @@ else:
 st.subheader("D) Fairness / Bias")
 st.markdown(r"""
 **Key formulas:**  
-- **Selection Rate** \(SR_g = P(\hat{Y}=1 \mid A=g)\)  
-- **Statistical Parity Difference** \(SPD = SR_{ref} - SR_g\)  
-- **Disparate Impact** \(DI = SR_g / SR_{ref}\) (80% rule if \(DI \ge 0.8\))  
-- **Equal Opportunity Gap** \(EOG = |TPR_g - TPR_{ref}|\)  
-- **Equalized Odds Gap** \(EOD = \frac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}\)  
+- **Selection Rate** $SR_g = P(\hat{Y}=1 \mid A=g)$ 
+- **Statistical Parity Difference** $SPD = SR_{ref} - SR_g$  
+- **Disparate Impact** $DI = SR_g / SR_{ref}$ (80% rule if $DI \ge 0.8$)
+- **Equal Opportunity Gap** $EOG = |TPR_g - TPR_{ref}|$  
+- **Equalized Odds Gap** $EOD = \frac{|TPR_g - TPR_{ref}| + |FPR_g - FPR_{ref}|}{2}$ 
 Reference group: **largest-N** group for stability.
 """)
 if has("fairness_df"):
