@@ -21,8 +21,8 @@ try:
 except Exception:
     HAS_SCIPY = False
 
-st.set_page_config(page_title="7) Summary Dashboard — Part 05", layout="wide")
-st.title("7) Summary Dashboard — Group Comparisons (Part 05)")
+st.set_page_config(page_title="Summary Dashboard ", layout="wide")
+st.title("Summary Dashboard — Group Comparisons")
 st.caption("This page implements the pre-registered analysis plan in steps with formulas, diagnostics, and interactive charts.")
 
 def has(key: str) -> bool:

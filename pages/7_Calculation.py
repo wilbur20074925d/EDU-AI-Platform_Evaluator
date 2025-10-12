@@ -37,8 +37,8 @@ try:
 except Exception:
     HAS_IMPUTE = False
 
-st.set_page_config(page_title="EDU-AI — Calculation Page", layout="wide")
-st.title("EDU-AI Evaluation — Calculation Page (Step-by-Step)")
+st.set_page_config(page_title="Calculation Page", layout="wide")
+st.title("7)Calculation Page (Step-by-Step)")
 st.caption("This page performs the full analysis pipeline with academic formulas, outputs, and interactive figures.")
 
 # ------------------------
