@@ -7,3 +7,4 @@ statsmodels
 textstat
 nltk
 matplotlib
+scikit-learn>=1.0

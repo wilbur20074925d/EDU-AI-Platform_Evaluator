@@ -286,7 +286,16 @@ def _safe_hist(df, x, **kwargs):
         st.plotly_chart(px.histogram(df, x=x, **kwargs), use_container_width=True)
     else:
         st.info("No NASA-TLX scores to plot yet.")
+import plotly.express as px
 
+def _safe_hist(df, x, nbins=25, title=None, key=None, **kwargs):
+    fig = px.histogram(df, x=x, nbins=nbins, title=title, **kwargs)
+    # Provide a deterministic unique key if none is passed
+    if key is None:
+        base = f"hist_{x}_{title or ''}_{nbins}"
+        key = base.replace(" ", "_").lower()
+    st.plotly_chart(fig, use_container_width=True, key=key)
+    
 def infer_subscale_from_item(item: str):
     s = str(item).lower()
     # heuristic mapping; tweak as needed
@@ -370,7 +379,7 @@ else:
             st.dataframe(wdf.head(10), use_container_width=True)
 
             # Histogram (guarded)
-            _safe_hist(wdf, "nasatlx", nbins=25, title="NASA-TLX Workload Distribution")
+            _safe_hist(wdf, "nasatlx", nbins=25, title="NASA-TLX Workload Distribution", key="surveys_nasatlx_hist")
 
             # Radar of subscales (mean)
             sub_means = (tlx.groupby("subscale")["response"].mean()
